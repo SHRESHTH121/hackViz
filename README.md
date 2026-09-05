@@ -4,16 +4,6 @@
 
 HackViz is a college software engineering project for UCS503 at Thapar Institute of Engineering and Technology. The system explores behavior-based intrusion detection using unsupervised sequence autoencoders, with a focus on explainability, transfer learning, and reducing cold-start time for new users and systems.
 
-## Team
-
-- Shreshth
-- Lakshit
-- Geetansh
-
-**Course:** UCS503 — Software Engineering  
-**Institution:** Thapar Institute of Engineering and Technology  
-**Submitted to:** Stuti Chugh
-
 ## Problem
 
 Traditional SIEM systems commonly rely on static rules that can miss sophisticated behavioral attacks and generate large numbers of false positives. HackViz models normal activity as sequences of events and identifies sessions whose behavior deviates significantly from learned patterns.
