@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# ML artifacts
+*.pt
+*.pth
+*.ckpt
+*.joblib
+models/checkpoints/
+
+# Data
+*.csv
+*.parquet
+*.jsonl
+/data/
+datasets/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Java / Spring Boot
+target/
+*.class
+*.jar
+*.war
+.gradle/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
