@@ -4,29 +4,17 @@
 
 So we started this project thinking it would be straightforward we would grab a dataset, train an autoencoder, done. But in two days it turned out to be one of the most basic cybersecurity datasets like HDFS or BGL or Thunderbird which are basically just system logs. They track server crashes and disk failures, not what actual users are doing on a network. We needed user behavior logins, emails, file copies, web browsing and none of those datasets had it. Also our proffessor made it pretty clear during the first check-in that "by just applying deep learning to logs" wasnt going to fly as a project topic, unless we found something actually new.
 
+A second problem was actually finding a suitable insider-threat dataset and getting access to the real data. We spent a lot of time downloading datasets, opening them and realizing they were either missing the type of user behavior we needed or did not have useful ground truth. Once we found the CERT Insider Threat Test Dataset, another practical problem appeared: obtaining the actual CERT Release 4.2 archive. We were able to obtain the CERT answer/ground-truth archive, but the original KiltHub download for `r4.2.tar.bz2` repeatedly failed in the browser with a "File wasn't available on site" error. We did not want to replace the real CERT benchmark with another custom synthetic dataset just because the official download was inconvenient.
+
+At the same time, we had a major problem with establishing genuine novelty. Initially we thought that using an LSTM/autoencoder for anomaly detection might itself be enough to make the project novel. While searching existing work, we found the paper **"DeepLog: Anomaly Detection and Diagnosis from System Logs through Deep Learning" by Min Du, Feifei Li, Guineng Zheng and Vivek Srikumar (CCS 2017)**. We realized that LSTM-based sequential anomaly detection, normal-only training, online model updating and workflow-based diagnosis were already explored in DeepLog. This meant that simply saying "we use deep learning on logs" would not be a defensible novelty claim.
+
+Because of this, we went through the DeepLog paper thoroughly during Week 1 and treated it as an important baseline for understanding what had already been done and what HackViz would need to add rather than accidentally reproducing the same contribution.
+
 ## Relevant Context
 
 We spent most of the week just downloading needfull files and opening it and realizing it was useless. Like some of the datasets had no labels, so even if something weird was happening in there we would have no way of knowing if we actually caught it or not. Others were so stripped down they were basically just timestamps with no user ID attached like how do you do behavioral analysis if you dont know which user did what? We also looked at what commercial SIEM tools are doing these days and realized the baseline is already pretty high, most of them already do some kind of anomaly scoring so we couldnt just build another one.
 
-## Key Observation
-
-The thing that actually helped was when we stopped searching for "log dataset" and started searching specifically for insider threat data. That narrowed things down a lot and we found the CERT Insider Threat Test Dataset. It was complete actually had all the event types we wanted  logon, file, HTTP, device, email  and theyre all linked to actual users with known malicious scenarios. Around the same time we realized our novelty wasnt going to come from just picking a fancier model. It had to come from how we used it. We needed to actually solve problems that existing work doesnt handle well  like explaining why something is anomalous instead of just giving a score, dealing with new users who dont have much history, and actually comparing architectures instead of just picking one and claiming its the best.
-
-## Solution
-
-So we decided to go with CERT as our main dataset. And we mapped out three things that would make our project different from just another anomaly detector: Explainability so analysts actually know what triggered the alert.
-Transfer learning to handle the cold start problem where a new user has almost no history
-Proper comparison between LSTM/GRU, Transformer, and a hybrid of both instead of just picking whichever one we liked more.
-
-## Outcome
-
-By the end of the week we had a path paved and project went from "build an anomaly detector" to "build and compare explainable transferable anomaly detectors on actual user behavior data."
-
-## Dataset Access Problem and Workaround
-
-A major practical problem during Week 1 was obtaining the actual CERT Release 4.2 dataset. We were able to obtain the CERT answer/ground-truth archive, but the original KiltHub download for `r4.2.tar.bz2` repeatedly failed in the browser with a "File wasn't available on site" error. This became a project issue because we did not want to replace the real CERT benchmark with another custom synthetic dataset just because the official download was inconvenient.
-
-We therefore identified a third-party Hugging Face copy of the CERT r4.2 data as a fallback. The original source remains Carnegie Mellon University SEI/KiltHub, while the Hugging Face repository is being used as an alternate distribution point. We will verify the downloaded files, schemas, timestamps, users and ground-truth mapping before using them for experiments.
+The CERT dataset solved most of the data-side problem because it contains the behavioral sources we were looking for: logon, file, HTTP, device and email activity, linked to users and known malicious scenarios. We therefore decided to use CERT as the main benchmark instead of relying on the earlier custom synthetic dataset. The original source is Carnegie Mellon University SEI/KiltHub, and because the r4.2 archive download was failing, we also identified a third-party Hugging Face copy as an alternate distribution point. We will verify the downloaded files, schemas, timestamps, users and ground-truth mapping before using them for experiments.
 
 ### Dataset Sources
 
@@ -35,19 +23,17 @@ We therefore identified a third-party Hugging Face copy of the CERT r4.2 data as
 
 The distinction is important: CERT r4.2 itself is a synthetic benchmark created by the CERT program, but it is the original CERT benchmark release. The Hugging Face repository is a third-party copy/distribution of that dataset, not a new CERT-inspired dataset generated by our team.
 
-## DeepLog Literature Review and Novelty Analysis
+For the novelty problem, the DeepLog review showed us that DeepLog models system logs as sequences and uses an LSTM to learn normal execution patterns. It performs online anomaly detection by predicting the next log key from recent history, models parameter values as multivariate time series, supports online updates using feedback, and constructs workflow models to help diagnose detected anomalies. This made it clear that these ideas could not simply be presented as HackViz's new contribution.
 
-Another major problem in Week 1 was establishing genuine novelty. We initially thought that using an LSTM/autoencoder for anomaly detection might itself be enough to make the project novel. While studying prior work, we found the paper **"DeepLog: Anomaly Detection and Diagnosis from System Logs through Deep Learning" by Min Du, Feifei Li, Guineng Zheng and Vivek Srikumar (CCS 2017)**. Because DeepLog already uses LSTM-based sequential anomaly detection, normal-only training, online model updating and workflow-based diagnosis, we realized that simply saying "we use deep learning on logs" would not be a defensible novelty claim.
+## Key Observation
 
-We therefore went through the DeepLog paper thoroughly during Week 1 and used it as a baseline reference for defining what HackViz should add rather than accidentally reproducing the same contribution.
+The thing that actually helped was when we stopped searching for "log dataset" and started searching specifically for insider threat data. That narrowed things down a lot and we found the CERT Insider Threat Test Dataset. It was complete actually had all the event types we wanted  logon, file, HTTP, device, email  and theyre all linked to actual users with known malicious scenarios.
 
-### What DeepLog Already Does
+The DeepLog review was the other major turning point. We realized our novelty wasnt going to come from just picking a fancier model. It had to come from how we used it and what problem we solved. We needed to focus on problems that existing system-log anomaly detection work does not directly address in the same way, such as explaining why a user behavior sequence is anomalous, dealing with new users who have very little history, combining heterogeneous user-behavior sources, and comparing different sequence architectures under the same conditions instead of just picking one and claiming its the best.
 
-From our review, DeepLog models system logs as sequences and uses an LSTM to learn normal execution patterns. It performs online anomaly detection by predicting the next log key from recent history, and it also models parameter values as multivariate time series. It includes an online update mechanism that can incorporate user feedback and constructs workflow models that help diagnose detected anomalies. The paper also explicitly discusses using normal data for training rather than relying on abnormal examples, which is important for unknown-anomaly detection.
+## Solution
 
-### Novelty Direction Identified for HackViz
-
-After comparing our intended system with DeepLog, we identified the following project-level contributions as the areas where HackViz can be meaningfully different:
+So we decided to go with CERT as our main dataset and use the DeepLog paper as one of the key references for defining our research gap. We mapped out the following areas that could make HackViz different from a basic anomaly detector:
 
 1. **User-centric insider-threat detection rather than generic system-log anomaly detection.** DeepLog is designed around system/application logs and execution paths. HackViz focuses on employee behavioral activity across heterogeneous CERT sources such as logon, device, file, email and HTTP activity, allowing anomalies to be interpreted in terms of user behavior.
 
@@ -61,19 +47,13 @@ After comparing our intended system with DeepLog, we identified the following pr
 
 6. **Security-oriented evaluation beyond detection accuracy.** HackViz will evaluate F1-score, precision/recall, false-positive rate, PR-AUC, inference latency and training cost, with particular attention to the class imbalance and operational alert-fatigue problem of insider-threat detection. Transfer-learning experiments will also compare performance against training from scratch.
 
-### Important Novelty Boundary
+The literature review also helped us define what **not** to claim as novel. LSTM-based anomaly detection, training on normal sequences, online adaptation, workflow-based diagnosis, use of timestamps/parameters, and sequence prediction are already demonstrated by DeepLog. Therefore HackViz will not present any of those ideas individually as new. Our novelty is instead positioned around their application and combination for **user-centric insider-threat behavioral data**, heterogeneous multi-source fusion, transfer learning under limited user history/cross-release shift, systematic comparison of sequence architectures, and analyst-oriented explainability.
 
-The review also helped us define what **not** to claim as novel. LSTM-based anomaly detection, training on normal sequences, online adaptation, workflow-based diagnosis, use of timestamps/parameters, and sequence prediction are already demonstrated by DeepLog. Therefore HackViz will not present any of those ideas individually as new. Our novelty is instead positioned around their application and combination for **user-centric insider-threat behavioral data**, heterogeneous multi-source fusion, transfer learning under limited user history/cross-release shift, systematic comparison of sequence architectures, and analyst-oriented explainability.
+## Outcome
 
-This literature review changed the project direction significantly. Instead of trying to invent an entirely new neural network, we decided that the stronger research question is whether modern sequence models, transfer learning and explainability can improve practical insider-threat detection when compared fairly against established sequential anomaly-detection ideas such as DeepLog.
+By the end of the week we had a path paved and project went from "build an anomaly detector" to "build and compare explainable transferable anomaly detectors on actual user behavior data." More importantly, we now had a much clearer understanding of what had already been done in DeepLog and what we should and should not claim as novelty. We also had a reliable dataset direction through CERT and a documented fallback source for the r4.2 data when the official download was unavailable.
 
-### DeepLog Paper Added to Repository
-
-The original PDF supplied for this literature review is stored in the repository as:
-
-`docs/DeepLog-research_paper.pdf`
-
-Reference: **Min Du, Feifei Li, Guineng Zheng, Vivek Srikumar. "DeepLog: Anomaly Detection and Diagnosis from System Logs through Deep Learning." CCS 2017. DOI: 10.1145/3133956.3134015.**
+The original DeepLog PDF supplied for this literature review is intended to be kept with the project documentation as `docs/DeepLog-research_paper.pdf` and is referenced as: **Min Du, Feifei Li, Guineng Zheng, Vivek Srikumar. "DeepLog: Anomaly Detection and Diagnosis from System Logs through Deep Learning." CCS 2017. DOI: 10.1145/3133956.3134015.**
 
 # Week 2 — Handling and Preprocessing Large-Scale Heterogeneous Data
 
