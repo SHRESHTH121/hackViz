@@ -9,19 +9,28 @@ env/
 .mypy_cache/
 .ipynb_checkpoints/
 
+# Data and generated datasets
+/data/
+data/
+datasets/
+*.csv
+*.tsv
+*.parquet
+*.jsonl
+*.zip
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+
 # ML artifacts
 *.pt
 *.pth
 *.ckpt
+*.safetensors
 *.joblib
 models/checkpoints/
-
-# Data
-*.csv
-*.parquet
-*.jsonl
-/data/
-datasets/
+ml-service/models/checkpoints/
 
 # Environment and secrets
 .env
