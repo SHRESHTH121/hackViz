@@ -38,7 +38,7 @@ By the end of Week 1, the project had a clearer problem definition and a suitabl
 
 During the early project discussion, our professor emphasized that the project needed a meaningful contribution rather than simply applying an existing deep-learning model to a dataset. This created a second problem: we needed to understand what had already been done in sequence-based anomaly detection before deciding what HackViz could contribute.
 
-Our literature search led to **DeepLog: Anomaly Detection and Diagnosis from System Logs through Deep Learning** by Min Du, Feifei Li, Guineng Zheng and Vivek Srikumar.
+Our literature search led us to **DeepLog: Anomaly Detection and Diagnosis from System Logs through Deep Learning** by Min Du, Feifei Li, Guineng Zheng and Vivek Srikumar.
 
 The paper changed our understanding of the problem because it already demonstrated LSTM-based sequential anomaly detection, normal-only training, next-log-key prediction, parameter modeling, online updates and workflow-based diagnosis.
 
@@ -154,47 +154,6 @@ Source-specific preprocessing will remove irrelevant fields, normalize timestamp
 ## Outcome
 
 The preprocessing design now provides a clear interface between raw CERT data and the temporal engine. Implementation of this layer is the next development stage rather than a result that is assumed to be complete.
-
-# Week 5 — User-Based Temporal Engine Design
-
-## Problem Faced
-
-Raw logs are individual events, but the anomaly detector needs to understand behavior over time. Treating each row independently would lose the relationships between actions performed by the same user during a day.
-
-## Relevant Context
-
-HackViz therefore organizes activity around the user and chronological time. The intended primary unit is a user-day behavioral sequence, with sessionization available where it improves the representation.
-
-## Key Observation
-
-The temporal engine is the bridge between heterogeneous event processing and sequence modeling. It must preserve event order and retain enough context for downstream models without converting the data into natural-language text.
-
-## Solution
-
-The intended structure is:
-
-```text
-User → Date → Chronologically ordered events
-```
-
-For example:
-
-```text
-U001 / 2026-01-05
-[
-    [LOGON,       08:55, PC101, ...],
-    [FILE_ACCESS, 09:10, PC101, ...],
-    [EMAIL,       09:30, PC101, ...],
-    [FILE_ACCESS, 10:15, PC101, ...],
-    [LOGOFF,      17:05, PC101, ...]
-]
-```
-
-This is an event array, not a sentence.
-
-## Outcome
-
-The temporal-engine design establishes the intended model input: chronological behavioral arrays for individual users rather than isolated records.
 
 # Future Development Weeks
 
