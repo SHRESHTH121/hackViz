@@ -155,19 +155,211 @@ Source-specific preprocessing will remove irrelevant fields, normalize timestamp
 
 The preprocessing design now provides a clear interface between raw CERT data and the temporal engine. Implementation of this layer is the next development stage rather than a result that is assumed to be complete.
 
-# Future Development Weeks
+# Week 5 — Temporal Engine and How to Feed Behaviour to the Model
 
-The following stages are intentionally recorded as planned work until implementation and experiments are completed:
+## Problem Faced
 
-- Event representation and embeddings
-- LSTM and GRU autoencoder implementation
-- Transformer autoencoder implementation
-- Training and validation strategy
-- Explainability layer
-- CERT r4.2 baseline experiments
-- CERT r4.2 → r6.2 transfer-learning experiments
-- Model comparison
-- Security-oriented evaluation
-- Backend integration
-- Streamlit analyst dashboard
-- Final testing and documentation
+The first major implementation problem was building the temporal engine: deciding how raw events should be grouped and ordered before they are analysed. The same activity can be organised in very different ways — per person, per day, per session, or as a moving window of recent events — and the choice directly affects what the model can and cannot notice.
+
+The problem became sharper once we decided to use a large language model for the assessment. An LLM cannot be given an employee's entire history: on our CPU-only laptops the practical context window is about 4,096 tokens, and every additional event makes inference slower.
+
+## Relevant Context
+
+We considered the main grouping options:
+
+- **Person-wise (full history):** keeps all context for one employee, but is far too long for the model and mixes old and recent behaviour.
+- **Day-wise (user-day blocks):** matches the user → day → events plan from Week 2, but fixed day boundaries split sequences that cross midnight, such as a late-evening export session, and say nothing about whether the day was normal for that person.
+- **Fixed-size event windows:** easy to compute, but ignore who the person is and what they usually do.
+
+## Key Observation
+
+The grouping must always be **per person**, because the same action means different things for different roles: a developer on GitHub is routine, an intern on an HR salary page is not. Within one person, the model needs two kinds of context at once: a **summary of what is normal for them** and the **recent sequence of events in order**.
+
+## Solution
+
+The temporal engine was designed around three parts:
+
+1. **Behavioural baseline per employee:** a compact summary of their history instead of raw events — observation period, active days, events and downloads per day, event-type distribution, usual working hours (5th–95th percentile in local time), top domains, website categories, removable-media events and external e-mails.
+2. **Chronological analysis window:** up to 35 new live events plus up to 15 preceding events for context, each written as one compact line with event ID, local time, source (historical or live), type, domain, path and a few safe details.
+3. **Incremental batching:** a new analysis is triggered per employee after 5 new events or 90 seconds of inactivity, tracked by a per-employee cursor so that the same events are not analysed twice.
+
+## Outcome
+
+Behaviour is now fed to the model per person, in chronological order, together with that person's normal pattern. The prompt stays small enough for CPU inference while keeping the information needed to judge whether a sequence is unusual.
+
+# Week 6 — Analysing E-mail and File Content
+
+## Problem Faced
+
+The e-mail and file sources raised a separate problem. Detecting suspicious e-mails or documents properly would mean reading their **content**, which would need either a second LLM or a dedicated text-preprocessing and classification pipeline for e-mail bodies and file contents.
+
+## Relevant Context
+
+The Week 3 EDA had already shown that e-mail content, recipients, filenames and file content are high-cardinality text fields. Running an LLM over every e-mail and document is not feasible on our hardware: one model call already takes about a minute or more on the CPU, and the CERT e-mail source alone has 192,177 rows. Reading message and document contents is also highly privacy-sensitive, and a monitoring tool should collect as little as possible.
+
+## Key Observation
+
+Much of the risk signal is available from **metadata** without reading content: who an e-mail is sent to (internal, external or personal mailbox), how many attachments it carries and how large it is, which files are copied and where to, and whether a downloaded file has a sensitive-looking name. A separate content model would add cost and privacy risk for comparatively little benefit at this stage.
+
+## Solution
+
+We chose a metadata-only design:
+
+- E-mails are represented by recipient domain, number of recipients, number of attachments and size — never subject or body.
+- File activity is represented by path or filename, activity type (open, write, copy) and destination (for example removable media).
+- Rule-based indicators use sensitive-filename keywords (payroll, salary, confidential, customer, export and similar) and personal-mailbox domains to highlight risky combinations, such as a sensitive download followed by file-sharing or personal e-mail activity.
+- Content analysis with a separate model was recorded as future work.
+
+## Outcome
+
+E-mail and file behaviour contributes to the assessment without a second model and without reading any content. This also kept the Chrome extension simple and privacy-preserving: it collects only navigation and download metadata.
+
+# Week 7 — Choosing the Right Architecture
+
+## Problem Faced
+
+We had to choose the architecture for detection and for the overall system. The research plan from Week 2 proposed LSTM, GRU and Transformer autoencoders, but each option had different trade-offs in implementation time, training data, hardware and — most importantly for analysts — explainability.
+
+## Relevant Context
+
+- **Sequence autoencoders** (LSTM, GRU, Transformer) produce an anomaly score after training on normal behaviour, but a score alone does not explain *why* activity is suspicious, and building, training and evaluating them properly on CERT needs substantial time.
+- **Rule-based detection** is transparent but brittle, and cannot take the employee's role and history into account in a flexible way.
+- **A local transformer-based LLM** can reason about a sequence in the context of role and history and explain its answer in plain language, but it can be inconsistent and can invent evidence if its output is not checked.
+
+The system also had to run fully locally on a 16 GB CPU-only laptop, with no cloud APIs.
+
+## Key Observation
+
+Given the time available in the semester, the most valuable and achievable contribution was **explainability**: alerts that state a risk level, explain the reasoning and cite the exact events behind it. This required a model that produces language, not only a score — combined with strict checks on what it outputs.
+
+## Solution
+
+We changed direction from training autoencoders to a working, explainable system:
+
+- **Assessment:** Qwen2.5-3B-Instruct, a decoder-only transformer LLM, run locally with Ollama, combined with transparent rule-based indicators and the Week 5 behavioural context. No model training.
+- **Reliability:** the model must return a strict JSON structure (anomaly flag, risk level, confidence, reason, evidence event IDs, recommended action), which is validated before anything is saved.
+- **System:** Chrome Manifest V3 extension → FastAPI backend → PostgreSQL → background analysis worker → Ollama → React dashboard.
+- LSTM, GRU and Transformer autoencoders were kept as planned future work rather than presented as implemented.
+
+## Outcome
+
+The architecture was fixed and implementation could start. The decision traded the planned model comparison for a complete, demonstrable and explainable pipeline.
+
+# Week 8 — Getting Users for Mock Demo Data
+
+## Problem Faced
+
+To demonstrate and test the system we needed realistic employee activity, both historical and live. We could not monitor real employees, and it was difficult to find people to act as users and generate enough varied demo data across different roles.
+
+## Relevant Context
+
+The full CERT releases are large, are not live, and do not match the browser-activity format collected by our extension. A meaningful demonstration needed several roles with a history of normal behaviour, plus some behaviour an investigator might want to look at — without inventing alerts.
+
+## Key Observation
+
+The historical data and the live data could be solved separately: historical behaviour could be generated synthetically and reproducibly, while live activity only needs whoever is presenting to browse normally with the extension paired to an employee.
+
+## Solution
+
+- **Synthetic historical dataset:** a seeded generator creates 10 fictional employees in different roles (HR, two developers, finance, management intern, project manager, system administrator, data analyst, sales, research intern) with 4,891 CERT-style events across 8 event types. It is byte-for-byte reproducible from seed 42. Some employees behave in ways worth reviewing — for example an evening of restricted-file exports followed by a file-sharing visit — but **no event is labelled** and no alert is pre-generated.
+- **Live demo users:** any team member can act as an employee by pairing the Chrome extension after confirming a monitoring notice; the dashboard also allows adding new employees.
+- **Automated browsing for tests:** an end-to-end script drives a real Chrome browser with the extension installed to generate genuine browsing and download activity.
+
+## Outcome
+
+The demo no longer depends on recruiting outside users. It starts from 10 fictional employees with a realistic history, and live activity comes from real browsing during the demonstration.
+
+# Week 9 — Implementation and Environment Problems
+
+## Problem Faced
+
+Building the backend and the model integration exposed several practical problems:
+
+- Windows Smart App Control blocked the unsigned DLLs of a portable PostgreSQL build, so the database could not initialise.
+- The model download repeatedly stalled because of connection resets.
+- The model sometimes cited event IDs that were not part of the supplied data, and its output had to be reliable enough to store.
+- A failed or timed-out analysis must not cause events to be skipped.
+
+## Relevant Context
+
+PostgreSQL was mandatory for the project (no SQLite fallback). All inference runs on the CPU, so a single analysis takes about a minute or more, and it must never block event collection.
+
+## Key Observation
+
+The model's output cannot simply be trusted: every field has to be checked, and every piece of evidence has to point to a real activity record. Long inference also means analysis has to run in the background.
+
+## Solution
+
+- Installed the official, code-signed PostgreSQL 16 installer instead of the portable build; resumed the model download until it completed.
+- Ollama is called with a JSON schema and low temperature. Responses are validated (risk level, confidence range, consistency between anomaly flag and risk level); evidence IDs not in the supplied records are removed and recorded, and an anomaly without valid evidence is rejected, with one corrective retry.
+- A single background worker runs analyses; the assessment and the cursor update are saved in one database transaction, so after any failure the same events are retried later instead of being skipped.
+
+## Outcome
+
+Events are ingested immediately, analysis runs in the background, and every saved alert is schema-valid and cites only real events.
+
+# Week 10 — Evaluating Performance
+
+## Problem Faced
+
+Evaluating the system was difficult. There was no labelled ground truth for live browser activity, the model's answers are not perfectly deterministic, and its confidence value is not a calibrated probability, so standard accuracy metrics could not be computed meaningfully. We also needed to know whether analysis was fast enough on a CPU.
+
+## Relevant Context
+
+The system has several layers that can fail independently: data validation, storage, the extension, the model integration and the dashboard. Model quality also depends strongly on the prompt.
+
+## Key Observation
+
+Evaluation had to be split into three parts: **correctness** of the system (automated tests), **quality** of the assessments (role-aware scenarios with known intent, checked by reading the model's real output), and **performance** (measured analysis time).
+
+## Solution
+
+- 54 automated tests: validation and evidence checks, indicators, API and database behaviour, dataset reproducibility, and 9 tests that run real inference with the model.
+- A 27-step end-to-end test with a real Chrome browser and the extension, plus 8 dashboard checks.
+- Scenario tests revealed a real weakness: with the first prompt, the model rated a finance analyst downloading payroll, bank-account and salary files and then visiting wetransfer.com as **low** risk (confidence 0.95). Adding a short rubric defining low, medium and high risk — without overriding the model's answer — changed this to **high** (0.85), while normal developer browsing stayed **low** (0.95) and a management intern browsing HR salary pages was rated **medium** (0.75).
+- Analysis time was measured at 60.7–134.2 seconds per assessment on the CPU.
+
+## Outcome
+
+All automated tests passed (54/54, 27/27 and 8/8). Detection precision and recall on a labelled benchmark have not yet been measured; this remains future work.
+
+# Week 11 — Integration, Testing and Documentation
+
+## Problem Faced
+
+The final week was spent integrating the components and fixing problems found during testing:
+
+- Current versions of Chrome no longer accept the `--load-extension` flag, so the extension could not be loaded for automated testing in the usual way.
+- Role matching used plain keyword search, so short keywords such as "hr" matched inside unrelated words, and developers were treated as expected users of identity-administration portals.
+- Dashboard issues: status indicators showed red before the first status check, charts were drawn mid-animation, and the profile chart showed live events in the historical colour.
+- The repository still contained the old pipeline skeleton and several outdated branches.
+
+## Relevant Context
+
+The project had to be demonstrable end to end: open the dashboard, pair the extension, browse, and receive a real model assessment with evidence.
+
+## Key Observation
+
+Most of the remaining issues only appeared when the whole system ran together with real data and a real browser, which made the end-to-end test essential.
+
+## Solution
+
+- The end-to-end test loads the extension through Chrome's DevTools pipe.
+- Role matching uses whole words, and IT administration was separated from cloud consoles.
+- Dashboard fixes: neutral status until the first check, animations disabled, and activity charts split by source.
+- The repository was restructured: the new application replaced the old skeleton, all earlier documentation was preserved under `docs/` (including `docs/legacy/`), and outdated branches were removed after their unique documentation was saved.
+- README, technical guide and test results were written.
+
+## Outcome
+
+The complete workflow runs end to end on a CPU-only laptop, and data persists across a backend restart.
+
+# Remaining Work
+
+The following items are still planned and are not yet implemented:
+
+- LSTM, GRU and Transformer autoencoders trained on normal behaviour, providing an anomaly score for the LLM to explain
+- Preprocessing and evaluation on the official CERT r4.2 benchmark, and r4.2 → r6.2 transfer-learning experiments
+- Precision, recall, PR-AUC and false-positive-rate evaluation against labelled insider scenarios
+- Content analysis of e-mails and files with a separate model, if privacy requirements allow
+- Authentication and access control for analysts, and deployment beyond a single machine
