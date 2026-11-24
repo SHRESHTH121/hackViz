@@ -4,6 +4,8 @@ LaTeX source of the end-semester project report (Group 3C25).
 
 | Path | Contents |
 |---|---|
+| `hackViz_Report.pdf` | Final compiled report |
+| `hackViz_Presentation.pptx` | Final 10-slide presentation |
 | `main.tex` | The report |
 | `tietreport.cls` | TIET report class used by `main.tex` |
 | `figures/` | Diagrams (use case, activity, swimlane, DFD levels 0–2, class, sequence) and screenshots |
