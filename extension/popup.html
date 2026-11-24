@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>hackViz Activity Monitor</title>
+  <style>
+    :root { --bg:#0a0e14; --panel:#111823; --border:#1e2836; --b2:#283447; --text:#e6ebf2; --t2:#b3bfcf; --muted:#7d8aa0;
+            --accent:#2f6fe8; --green:#2fbf71; --amber:#f0a830; --red:#f0524f; }
+    * { box-sizing: border-box; }
+    body { margin:0; width:340px; background:var(--bg); color:var(--text); font:13px/1.45 "Segoe UI", system-ui, sans-serif; }
+    header { display:flex; align-items:center; gap:10px; padding:14px 16px; border-bottom:1px solid var(--border); }
+    header img { width:26px; height:26px; }
+    header .t { font-weight:700; font-size:15px; } header .t span { color:#4f8cff; }
+    header .s { font-size:11px; color:var(--muted); }
+    section { padding:12px 16px; border-bottom:1px solid var(--border); }
+    .row { display:flex; align-items:center; gap:8px; }
+    .k { color:var(--muted); font-size:12px; } .v { margin-left:auto; text-align:right; }
+    .kv { display:grid; grid-template-columns:auto 1fr; gap:5px 12px; font-size:12.5px; }
+    .kv div:nth-child(odd) { color:var(--muted); } .kv div:nth-child(even) { text-align:right; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .dot { width:8px; height:8px; border-radius:50%; display:inline-block; background:var(--muted); }
+    .ok { background:var(--green); } .warn { background:var(--amber); } .bad { background:var(--red); }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:10px 12px; }
+    .name { font-weight:600; font-size:14px; } .mono { font-family:Consolas, monospace; }
+    input[type=text] { width:100%; height:34px; border-radius:6px; border:1px solid var(--b2); background:#0e131b; color:var(--text); padding:0 10px; font:inherit; text-transform:uppercase; }
+    input[type=text]:focus { outline:none; border-color:#4f8cff; }
+    button { height:32px; border-radius:6px; border:1px solid var(--b2); background:#151d2a; color:var(--text); font:inherit; font-weight:500; padding:0 12px; cursor:pointer; }
+    button:hover { background:#1a2333; } button:disabled { opacity:.5; cursor:not-allowed; }
+    button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+    button.danger { color:var(--red); }
+    .btns { display:flex; gap:8px; margin-top:10px; } .btns button { flex:1; }
+    .msg { margin-top:8px; font-size:12px; padding:7px 9px; border-radius:6px; display:none; }
+    .msg.err { display:block; color:#f59a98; background:rgba(240,82,79,.08); border:1px solid rgba(240,82,79,.35); }
+    .msg.ok { display:block; color:#8fe0b4; background:rgba(47,191,113,.08); border:1px solid rgba(47,191,113,.3); }
+    .notice { font-size:11.5px; color:var(--t2); }
+    .notice ul { margin:6px 0 0; padding-left:16px; } .notice li { margin:2px 0; }
+    label.consent { display:flex; gap:8px; align-items:flex-start; font-size:12px; color:var(--t2); margin-top:10px; }
+    details { font-size:12px; color:var(--muted); } summary { cursor:pointer; }
+    .hidden { display:none !important; }
+    .status-big { font-weight:600; }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="icons/icon48.png" alt="" />
+    <div><div class="t">hack<span>Viz</span> Monitor</div><div class="s">Authorized activity metadata collector</div></div>
+  </header>
+
+  <section>
+    <div class="kv">
+      <div>Backend</div><div><span id="backendDot" class="dot"></span> <span id="backendText">checking…</span></div>
+      <div>Monitoring</div><div id="monText" class="status-big">—</div>
+      <div>Last successful send</div><div id="lastSend">—</div>
+      <div>Events sent</div><div id="sent">0</div>
+      <div>Queued (unsent)</div><div id="queued">0</div>
+    </div>
+    <div id="lastErr" class="msg"></div>
+  </section>
+
+  <section id="pairedBox" class="hidden">
+    <div class="k" style="margin-bottom:6px">Paired employee</div>
+    <div class="card">
+      <div class="row"><span class="name" id="pName"></span><span class="mono v" id="pId"></span></div>
+      <div class="k" id="pRole"></div>
+      <div class="k" id="pSince" style="margin-top:4px"></div>
+    </div>
+    <div class="btns">
+      <button id="switchBtn">Switch employee</button>
+      <button id="unpairBtn" class="danger">Disconnect</button>
+    </div>
+  </section>
+
+  <section id="pairBox">
+    <div class="k" style="margin-bottom:6px">Pair this browser with an employee</div>
+    <input id="empId" type="text" placeholder="Employee ID, e.g. EMP002" maxlength="32" autocomplete="off" />
+    <label class="consent"><input id="consent" type="checkbox" />
+      <span>I confirm this browser is used for authorized work and the employee has been notified that navigation and download metadata are monitored.</span></label>
+    <div class="btns"><button id="cancelSwitch" class="hidden">Cancel</button><button id="pairBtn" class="primary">Pair &amp; start monitoring</button></div>
+    <div id="pairMsg" class="msg"></div>
+  </section>
+
+  <section class="notice">
+    <b>What is collected:</b>
+    <ul>
+      <li>Top-level page navigations: URL <i>without</i> query string or fragment, domain, time</li>
+      <li>Completed downloads: source domain/URL, file name, size, type</li>
+    </ul>
+    <b>Never collected:</b> passwords, keystrokes, form data, page content, cookies, tokens, email contents. Visiting an upload page is <i>not</i> treated as proof of an upload.
+  </section>
+
+  <section>
+    <details>
+      <summary>Advanced</summary>
+      <div class="row" style="margin-top:8px"><input id="backendUrl" type="text" style="text-transform:none" /><button id="saveBackend">Save</button></div>
+      <div class="btns"><button id="flushBtn">Retry sending now</button></div>
+    </details>
+  </section>
+  <script src="popup.js"></script>
+</body>
+</html>

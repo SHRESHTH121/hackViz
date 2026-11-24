@@ -1,0 +1,9 @@
+{
+  "label": "Fictional CERT-style synthetic data (hackViz)",
+  "seed": 42,
+  "end_date": "2026-11-20",
+  "days": 28,
+  "employees": 10,
+  "events": 4891,
+  "sha256": "1d5a4f21fa426fb3e9367c3c41a26caa9eb13defbc866476ce4e6a374f18a7f0"
+}

@@ -1,0 +1,146 @@
+{
+  "label": "Fictional CERT-style synthetic data (hackViz)",
+  "organization": "Corvane Technologies (fictional)",
+  "employees": [
+    {
+      "employee_id": "EMP001",
+      "name": "Aarav Mehta",
+      "role": "HR Executive",
+      "department": "Human Resources",
+      "profile": {
+        "pc": "PC-1041",
+        "location": "Pune",
+        "hire_date": "2021-03-15",
+        "work_start": "09:30",
+        "work_end": "18:30"
+      },
+      "email": "aarav.mehta@corvane.example"
+    },
+    {
+      "employee_id": "EMP002",
+      "name": "Rohan Sharma",
+      "role": "Software Developer (SDE1)",
+      "department": "Engineering",
+      "profile": {
+        "pc": "PC-2210",
+        "location": "Bengaluru",
+        "hire_date": "2024-07-01",
+        "work_start": "10:00",
+        "work_end": "19:00"
+      },
+      "email": "rohan.sharma@corvane.example"
+    },
+    {
+      "employee_id": "EMP003",
+      "name": "Priya Kapoor",
+      "role": "Software Developer (SDE2)",
+      "department": "Engineering",
+      "profile": {
+        "pc": "PC-2217",
+        "location": "Bengaluru",
+        "hire_date": "2022-01-10",
+        "work_start": "10:00",
+        "work_end": "19:00"
+      },
+      "email": "priya.kapoor@corvane.example"
+    },
+    {
+      "employee_id": "EMP004",
+      "name": "Kabir Malhotra",
+      "role": "Finance Analyst",
+      "department": "Finance",
+      "profile": {
+        "pc": "PC-3102",
+        "location": "Mumbai",
+        "hire_date": "2020-09-21",
+        "work_start": "09:30",
+        "work_end": "18:30"
+      },
+      "email": "kabir.malhotra@corvane.example"
+    },
+    {
+      "employee_id": "EMP005",
+      "name": "Ananya Verma",
+      "role": "Management Intern",
+      "department": "Management",
+      "profile": {
+        "pc": "PC-4407",
+        "location": "Gurugram",
+        "hire_date": "2026-06-02",
+        "work_start": "09:30",
+        "work_end": "18:00"
+      },
+      "email": "ananya.verma@corvane.example"
+    },
+    {
+      "employee_id": "EMP006",
+      "name": "Arjun Bhatia",
+      "role": "Project Manager",
+      "department": "Management",
+      "profile": {
+        "pc": "PC-4402",
+        "location": "Gurugram",
+        "hire_date": "2019-11-04",
+        "work_start": "09:00",
+        "work_end": "18:30"
+      },
+      "email": "arjun.bhatia@corvane.example"
+    },
+    {
+      "employee_id": "EMP007",
+      "name": "Ishita Rao",
+      "role": "System Administrator",
+      "department": "IT",
+      "profile": {
+        "pc": "PC-5001",
+        "location": "Hyderabad",
+        "hire_date": "2018-05-14",
+        "work_start": "09:00",
+        "work_end": "18:00"
+      },
+      "email": "ishita.rao@corvane.example"
+    },
+    {
+      "employee_id": "EMP008",
+      "name": "Vivaan Khanna",
+      "role": "Data Analyst",
+      "department": "Analytics",
+      "profile": {
+        "pc": "PC-6120",
+        "location": "Bengaluru",
+        "hire_date": "2023-02-20",
+        "work_start": "09:30",
+        "work_end": "18:30"
+      },
+      "email": "vivaan.khanna@corvane.example"
+    },
+    {
+      "employee_id": "EMP009",
+      "name": "Meera Sethi",
+      "role": "Sales Executive",
+      "department": "Sales",
+      "profile": {
+        "pc": "PC-7033",
+        "location": "Delhi",
+        "hire_date": "2022-08-08",
+        "work_start": "09:30",
+        "work_end": "18:30"
+      },
+      "email": "meera.sethi@corvane.example"
+    },
+    {
+      "employee_id": "EMP010",
+      "name": "Aditya Nair",
+      "role": "Research Intern",
+      "department": "Research",
+      "profile": {
+        "pc": "PC-8012",
+        "location": "Chennai",
+        "hire_date": "2026-07-15",
+        "work_start": "10:00",
+        "work_end": "18:30"
+      },
+      "email": "aditya.nair@corvane.example"
+    }
+  ]
+}

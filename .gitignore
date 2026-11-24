@@ -1,58 +1,21 @@
 # Python
 __pycache__/
-*.py[cod]
-*.pyo
-.venv/
-venv/
-env/
+*.pyc
+backend/.venv/
 .pytest_cache/
-.mypy_cache/
-.ipynb_checkpoints/
 
-# Generated/local application data
-cert_out/
-apps/**/data/
-data/
-*.csv
-*.tsv
-*.parquet
-*.jsonl
-
-# ML artifacts
-*.pt
-*.pth
-*.ckpt
-*.safetensors
-*.joblib
-models/checkpoints/
-ml-service/models/checkpoints/
+# Secrets / local config
+backend/.env
+.env
 
 # Node
 node_modules/
-dist/
+frontend/dist/
+tests/e2e/downloads/
+tests/e2e/chrome-profile/
 
-# Environment and secrets
-.env
-.env.*
-!.env.example
-
-# Java / Spring Boot
-target/
-*.class
-*.jar
-*.war
-.gradle/
-build/
-
-# IDE
-.idea/
-.vscode/
-*.iml
-
-# OS
+# OS / editor
 .DS_Store
 Thumbs.db
-
-# Logs
+.vscode/
 *.log
-logs/

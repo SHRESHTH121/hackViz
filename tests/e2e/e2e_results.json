@@ -1,0 +1,178 @@
+{
+  "run_at": "2026-11-24T07:47:28.970Z",
+  "passed": 27,
+  "failed": 0,
+  "results": [
+    {
+      "step": "Backend health",
+      "ok": true,
+      "detail": "\"PostgreSQL 16.16\"",
+      "at_s": 0
+    },
+    {
+      "step": "Ollama model available",
+      "ok": true,
+      "detail": "qwen2.5:3b",
+      "at_s": 3
+    },
+    {
+      "step": "Initial employees present",
+      "ok": true,
+      "detail": "10 employees in directory",
+      "at_s": 3
+    },
+    {
+      "step": "Add employee EMP011 (Finance Analyst)",
+      "ok": true,
+      "detail": "HTTP 201",
+      "at_s": 3
+    },
+    {
+      "step": "Extension loads in Chrome (MV3 service worker running)",
+      "ok": true,
+      "detail": "id pdjjapiabfadoepnnndjdccmnlnedogk",
+      "at_s": 34
+    },
+    {
+      "step": "Popup shows backend connectivity",
+      "ok": true,
+      "detail": "",
+      "at_s": 35
+    },
+    {
+      "step": "Pairing blocked until monitoring notice is confirmed",
+      "ok": true,
+      "detail": "Please confirm the monitoring notice first.",
+      "at_s": 35
+    },
+    {
+      "step": "Invalid employee ID rejected",
+      "ok": true,
+      "detail": "Employee ID EMP999 does not exist",
+      "at_s": 35
+    },
+    {
+      "step": "Valid employee paired; name and role retrieved from PostgreSQL",
+      "ok": true,
+      "detail": "Sara Iyer — Finance Analyst · Finance",
+      "at_s": 36
+    },
+    {
+      "step": "Real top-level navigations performed in Chrome",
+      "ok": true,
+      "detail": "7/7 pages loaded",
+      "at_s": 73
+    },
+    {
+      "step": "Real file downloads completed by Chrome",
+      "ok": true,
+      "detail": "Hello-World-master.zip, sample_report.csv",
+      "at_s": 81
+    },
+    {
+      "step": "Navigation events stored in PostgreSQL",
+      "ok": true,
+      "detail": "7 navigation events (0 before test)",
+      "at_s": 82
+    },
+    {
+      "step": "Download events stored with filename",
+      "ok": true,
+      "detail": "127.0.0.1:sample_report.csv, codeload.github.com:Hello-World-master.zip",
+      "at_s": 82
+    },
+    {
+      "step": "Query strings / tokens stripped from URLs",
+      "ok": true,
+      "detail": "",
+      "at_s": 82
+    },
+    {
+      "step": "Event retrievable by ID from PostgreSQL",
+      "ok": true,
+      "detail": "#4900 127.0.0.1",
+      "at_s": 82
+    },
+    {
+      "step": "Monitoring status: paired AND transmitting",
+      "ok": true,
+      "detail": "events_received=9, connection=online",
+      "at_s": 85
+    },
+    {
+      "step": "Popup reports last successful transmission",
+      "ok": true,
+      "detail": "events sent 9, last send 4s ago",
+      "at_s": 85
+    },
+    {
+      "step": "Ollama analysis job completed",
+      "ok": true,
+      "detail": "done  in 28s (mode auto)",
+      "at_s": 113
+    },
+    {
+      "step": "Assessment saved in PostgreSQL",
+      "ok": true,
+      "detail": "alert #1: is_anomaly=false risk=low conf=0.85",
+      "at_s": 113
+    },
+    {
+      "step": "Analysis covered the live browser events",
+      "ok": true,
+      "detail": "5 live events in analyzed batch of 5",
+      "at_s": 113
+    },
+    {
+      "step": "Evidence IDs reference real supplied records of this employee",
+      "ok": true,
+      "detail": "evidence []",
+      "at_s": 113
+    },
+    {
+      "step": "assessment_detail",
+      "ok": true,
+      "detail": {
+        "id": 1,
+        "risk": "low",
+        "is_anomaly": false,
+        "confidence": 0.85,
+        "reason": "The employee's activity is consistent with their role and typical job-related browsing. They have visited Wikipedia, Python.org, GitHub, and Mozilla developer pages, all of which are expected for a Finance Analyst. No unusual patterns or indicators of malicious intent are present.",
+        "recommended_action": "No immediate action is recommended. The activity is within expected bounds for the role and no further investigation is necessary.",
+        "evidence": [],
+        "indicators": [],
+        "duration_ms": 61062
+      }
+    },
+    {
+      "step": "Dashboard lists employees incl. new employee",
+      "ok": true,
+      "detail": "",
+      "at_s": 117
+    },
+    {
+      "step": "Alert visible in the Anomaly Alerts page",
+      "ok": true,
+      "detail": "Alert #1",
+      "at_s": 119
+    },
+    {
+      "step": "Live activity feed shows extension events",
+      "ok": true,
+      "detail": "",
+      "at_s": 121
+    },
+    {
+      "step": "CSV export for employee matches stored activity",
+      "ok": true,
+      "detail": "9 rows",
+      "at_s": 122
+    },
+    {
+      "step": "No activity collected after disconnecting",
+      "ok": true,
+      "detail": "9 -> 9",
+      "at_s": 131
+    }
+  ]
+}
