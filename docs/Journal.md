@@ -2,7 +2,7 @@
 
 This journal records the development of HackViz chronologically. Each week separates the problem encountered, relevant context, key observations, the solution or decision made, and the resulting outcome. Planned work is not described as completed work.
 
-# Week 1 — Project Setup and Finding a Suitable Dataset
+# Week 1 - Project Setup and Finding a Suitable Dataset
 
 ## Problem Faced
 
@@ -32,7 +32,7 @@ We also decided that the raw CERT releases should remain outside GitHub because 
 
 By the end of Week 1, the project had a clearer problem definition and a suitable benchmark direction. The next major question became novelty: simply applying an LSTM or autoencoder to sequential data would not be enough.
 
-# Week 2 — Novelty Requirement and DeepLog Literature Review
+# Week 2 - Novelty Requirement and DeepLog Literature Review
 
 ## Problem Faced
 
@@ -90,7 +90,7 @@ Explainable Alert
 
 The project moved from the general idea of "build an anomaly detector" to a more defensible research direction. DeepLog became an important baseline for defining what HackViz would not claim as new and where our experiments could instead add value.
 
-# Week 3 — CERT Exploratory Data Analysis
+# Week 3 - CERT Exploratory Data Analysis
 
 ## Problem Faced
 
@@ -127,7 +127,7 @@ The EDA work was documented under `ml-service/EDA/`. The project direction becam
 
 We established a factual baseline of the CERT r4.2 files being analyzed and identified the main preprocessing concerns: heterogeneous schemas, high-cardinality categorical information, missing email recipient fields and the scale of the raw data.
 
-# Week 4 — Preprocessing and Event Unification Design
+# Week 4 - Preprocessing and Event Unification Design
 
 ## Problem Faced
 
@@ -155,7 +155,7 @@ Source-specific preprocessing will remove irrelevant fields, normalize timestamp
 
 The preprocessing design now provides a clear interface between raw CERT data and the temporal engine. Implementation of this layer is the next development stage rather than a result that is assumed to be complete.
 
-# Week 5 — Temporal Engine and How to Feed Behaviour to the Model
+# Week 5 - Temporal Engine and How to Feed Behaviour to the Model
 
 ## Problem Faced
 
@@ -187,7 +187,7 @@ The temporal engine was designed around three parts:
 
 Behaviour is now prepared per person, in chronological order, together with that person's normal pattern. The chronological event windows provide the sequential input for the separately implemented decoder-only Transformer anomaly detector, while the compact employee context and detection evidence are used later by Qwen for explanation. Keeping these stages separate avoids treating the LLM context window as the input mechanism for the detection model.
 
-# Week 6 — Analysing E-mail and File Content
+# Week 6 - Analysing E-mail and File Content
 
 ## Problem Faced
 
@@ -214,7 +214,7 @@ We chose a metadata-only design:
 
 E-mail and file behaviour contributes to the assessment without a second model and without reading any content. This also kept the Chrome extension simple and privacy-preserving: it collects only navigation and download metadata.
 
-# Week 7 — Choosing the Right Architecture
+# Week 7 - Choosing the Right Architecture
 
 ## Problem Faced
 
@@ -247,7 +247,7 @@ The earlier LSTM/GRU comparison remained outside the implemented pipeline; the T
 
 The architecture was fixed as two distinct model stages. The decoder-only Transformer had been implemented for anomaly detection, while Qwen remained the local language model for explaining the resulting alerts. This corrected the earlier plan: Transformer implementation was no longer future work.
 
-# Week 8 — Getting Users for Mock Demo Data
+# Week 8 - Getting Users for Mock Demo Data
 
 ## Problem Faced
 
@@ -271,7 +271,7 @@ The historical data and the live data could be solved separately: historical beh
 
 The demo no longer depends on recruiting outside users. It starts from 10 fictional employees with a realistic history, and live activity comes from real browsing during the demonstration.
 
-# Week 9 — Implementation and Environment Problems
+# Week 9 - Implementation and Environment Problems
 
 ## Problem Faced
 
@@ -303,7 +303,7 @@ The two model stages have different failure modes and must be treated separately
 
 Events are ingested immediately, analysis runs in the background, and every saved alert is schema-valid and cites only real events.
 
-# Week 10 — Evaluating Performance
+# Week 10 - Evaluating Performance
 
 ## Problem Faced
 
@@ -328,7 +328,7 @@ Evaluation had to be split into three parts: **correctness** of the system (auto
 
 All automated tests passed (54/54, 27/27 and 8/8). Detection precision and recall for the implemented Transformer on the official labelled CERT benchmark have not yet been measured; this remains future work. Passing integration tests demonstrates that the pipeline runs, not that the detector has achieved a particular benchmark accuracy.
 
-# Week 11 — Integration, Testing and Documentation
+# Week 11 - Integration, Testing and Documentation
 
 ## Problem Faced
 
@@ -358,13 +358,3 @@ Most of the remaining issues only appeared when the whole system ran together wi
 ## Outcome
 
 The complete workflow runs end to end on a CPU-only laptop, and data persists across a backend restart.
-
-# Remaining Work
-
-The following items are still planned and are not yet implemented:
-
-- Further refinement and systematic evaluation of the implemented decoder-only Transformer detector, including controlled comparisons with LSTM and GRU baselines
-- Preprocessing and evaluation on the official CERT r4.2 benchmark, and r4.2 → r6.2 transfer-learning experiments
-- Precision, recall, PR-AUC and false-positive-rate evaluation against labelled insider scenarios
-- Content analysis of e-mails and files with a separate model, if privacy requirements allow
-- Authentication and access control for analysts, and deployment beyond a single machine
