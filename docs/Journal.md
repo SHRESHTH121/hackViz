@@ -180,12 +180,12 @@ The grouping must always be **per person**, because the same action means differ
 The temporal engine was designed around three parts:
 
 1. **Behavioural baseline per employee:** a compact summary of their history instead of raw events — observation period, active days, events and downloads per day, event-type distribution, usual working hours (5th–95th percentile in local time), top domains, website categories, removable-media events and external e-mails.
-2. **Chronological analysis window:** up to 35 new live events plus up to 15 preceding events for context, each written as one compact line with event ID, local time, source (historical or live), type, domain, path and a few safe details.
+2. **Chronological analysis window:** up to 35 new live events plus up to 15 preceding events for context, each written as one compact line with event ID, local time, source (historical or live), type, domain, path and a few safe details. The event sequence also needs a consistent numerical/token representation so that the Transformer can learn temporal patterns rather than treating the input as an unordered collection.
 3. **Incremental batching:** a new analysis is triggered per employee after 5 new events or 90 seconds of inactivity, tracked by a per-employee cursor so that the same events are not analysed twice.
 
 ## Outcome
 
-Behaviour is now fed to the model per person, in chronological order, together with that person's normal pattern. The prompt stays small enough for CPU inference while keeping the information needed to judge whether a sequence is unusual.
+Behaviour is now prepared per person, in chronological order, together with that person's normal pattern. The chronological event windows provide the sequential input for the separately implemented decoder-only Transformer anomaly detector, while the compact employee context and detection evidence are used later by Qwen for explanation. Keeping these stages separate avoids treating the LLM context window as the input mechanism for the detection model.
 
 # Week 6 — Analysing E-mail and File Content
 
@@ -218,32 +218,34 @@ E-mail and file behaviour contributes to the assessment without a second model a
 
 ## Problem Faced
 
-We had to choose the architecture for detection and for the overall system. The research plan from Week 2 proposed LSTM, GRU and Transformer autoencoders, but each option had different trade-offs in implementation time, training data, hardware and — most importantly for analysts — explainability.
+We had to choose the architecture for detection and for the overall system. The research plan from Week 2 proposed LSTM, GRU and Transformer-based sequence models, but each option had different trade-offs in implementation time, training data, hardware and — most importantly for analysts — explainability. We ultimately implemented a separate decoder-only Transformer for anomaly detection from scratch, rather than relying on Qwen or another pretrained language model to detect anomalies.
 
 ## Relevant Context
 
-- **Sequence autoencoders** (LSTM, GRU, Transformer) produce an anomaly score after training on normal behaviour, but a score alone does not explain *why* activity is suspicious, and building, training and evaluating them properly on CERT needs substantial time.
-- **Rule-based detection** is transparent but brittle, and cannot take the employee's role and history into account in a flexible way.
-- **A local transformer-based LLM** can reason about a sequence in the context of role and history and explain its answer in plain language, but it can be inconsistent and can invent evidence if its output is not checked.
+- **A sequence model trained from scratch** can learn temporal patterns in employee activity and provide a detection signal, but it requires us to design the event representation, sequence construction, model architecture, training objective and anomaly-scoring procedure ourselves. Unlike using a pretrained model, there are no learned weights to reuse, so the model must learn useful patterns from the available behavioural data.
+- **Rule-based indicators** are transparent and useful as supporting signals, but are brittle on their own and cannot flexibly learn temporal relationships across events.
+- **Qwen2.5-3B-Instruct**, used separately as a local explainability model, can interpret the detector's output in the context of role and history and explain it in plain language, but it can be inconsistent or invent evidence if its output is not checked.
 
 The system also had to run fully locally on a 16 GB CPU-only laptop, with no cloud APIs.
 
 ## Key Observation
 
-Given the time available in the semester, the most valuable and achievable contribution was **explainability**: alerts that state a risk level, explain the reasoning and cite the exact events behind it. This required a model that produces language, not only a score — combined with strict checks on what it outputs.
+The key architectural decision was to separate **detection** from **explainability**. The decoder-only Transformer is responsible for learning behavioural sequences and identifying anomalies; Qwen is responsible for converting the detector's result and supporting context into an analyst-readable explanation. This avoids conflating a generative LLM's explanation with the model that actually detects anomalous activity.
 
 ## Solution
 
-We changed direction from training autoencoders to a working, explainable system:
+We implemented a two-model analysis pipeline, with rule-based indicators as supporting signals:
 
-- **Assessment:** Qwen2.5-3B-Instruct, a decoder-only transformer LLM, run locally with Ollama, combined with transparent rule-based indicators and the Week 5 behavioural context. No model training.
-- **Reliability:** the model must return a strict JSON structure (anomaly flag, risk level, confidence, reason, evidence event IDs, recommended action), which is validated before anything is saved.
-- **System:** Chrome Manifest V3 extension → FastAPI backend → PostgreSQL → background analysis worker → Ollama → React dashboard.
-- LSTM, GRU and Transformer autoencoders were kept as planned future work rather than presented as implemented.
+- **Anomaly detection:** a decoder-only Transformer architecture was implemented from scratch and trained for sequential employee-behaviour anomaly detection. It is a separate detection model; it is not Qwen and does not depend on Qwen to produce its anomaly signal.
+- **Explainability:** Qwen2.5-3B-Instruct runs locally through Ollama and receives the detection result, relevant activity evidence and employee context to generate a human-readable explanation and recommended action. Qwen is not the anomaly detector.
+- **Reliability:** the explanation stage must return a strict JSON structure (anomaly flag, risk level, confidence, reason, evidence event IDs, recommended action), which is validated before anything is saved. Evidence is checked against the supplied activity records.
+- **System:** Chrome Manifest V3 extension → FastAPI backend → PostgreSQL → background analysis worker → decoder-only Transformer detection → Qwen via Ollama for explanation → React dashboard.
+
+The earlier LSTM/GRU comparison remained outside the implemented pipeline; the Transformer was the sequence architecture carried forward.
 
 ## Outcome
 
-The architecture was fixed and implementation could start. The decision traded the planned model comparison for a complete, demonstrable and explainable pipeline.
+The architecture was fixed as two distinct model stages. The decoder-only Transformer had been implemented for anomaly detection, while Qwen remained the local language model for explaining the resulting alerts. This corrected the earlier plan: Transformer implementation was no longer future work.
 
 # Week 8 — Getting Users for Mock Demo Data
 
@@ -273,11 +275,13 @@ The demo no longer depends on recruiting outside users. It starts from 10 fictio
 
 ## Problem Faced
 
-Building the backend and the model integration exposed several practical problems:
+Building the backend and integrating the two-model pipeline exposed several practical problems:
 
+- Implementing a Transformer from scratch was substantially more involved than loading a pretrained model. We had to make the event representation and sequence preparation consistent with the model, define how chronological context is presented, and implement the decoder-only architecture and its training path rather than relying on pretrained weights.
+- Training the Transformer was a separate challenge from writing its architecture. The model had to learn useful patterns from employee activity sequences, while the data was heterogeneous, highly imbalanced and constrained by the available normal-behaviour examples. Sequence length, batching, training time and CPU memory/compute limits all affected the practical training process. A model that runs forward successfully is not necessarily a model that has learned a useful anomaly signal, so training behaviour and resulting scores needed to be inspected rather than assuming implementation meant successful learning.
 - Windows Smart App Control blocked the unsigned DLLs of a portable PostgreSQL build, so the database could not initialise.
-- The model download repeatedly stalled because of connection resets.
-- The model sometimes cited event IDs that were not part of the supplied data, and its output had to be reliable enough to store.
+- The Qwen model download repeatedly stalled because of connection resets.
+- Qwen sometimes cited event IDs that were not part of the supplied data, and its explanation had to be reliable enough to store.
 - A failed or timed-out analysis must not cause events to be skipped.
 
 ## Relevant Context
@@ -286,11 +290,12 @@ PostgreSQL was mandatory for the project (no SQLite fallback). All inference run
 
 ## Key Observation
 
-The model's output cannot simply be trusted: every field has to be checked, and every piece of evidence has to point to a real activity record. Long inference also means analysis has to run in the background.
+The two model stages have different failure modes and must be treated separately. The Transformer needs a sound training process and a meaningful detection signal; Qwen's generated explanation cannot simply be trusted, so every field has to be checked and every piece of evidence must point to a real activity record. Long inference also means analysis has to run in the background.
 
 ## Solution
 
-- Installed the official, code-signed PostgreSQL 16 installer instead of the portable build; resumed the model download until it completed.
+- Implemented the decoder-only Transformer as a separate detection component rather than treating Qwen as the detector. The from-scratch implementation required the event-to-sequence preparation and model training workflow to be developed alongside the architecture. Training was constrained by the size and imbalance of behavioural data and by CPU-only compute, making sequence length, batch sizing and training duration practical considerations. The detector's output is kept distinct from the explanation generated by Qwen.
+- Installed the official, code-signed PostgreSQL 16 installer instead of the portable build; resumed the Qwen model download until it completed.
 - Ollama is called with a JSON schema and low temperature. Responses are validated (risk level, confidence range, consistency between anomaly flag and risk level); evidence IDs not in the supplied records are removed and recorded, and an anomaly without valid evidence is rejected, with one corrective retry.
 - A single background worker runs analyses; the assessment and the cursor update are saved in one database transaction, so after any failure the same events are retried later instead of being skipped.
 
@@ -306,7 +311,7 @@ Evaluating the system was difficult. There was no labelled ground truth for live
 
 ## Relevant Context
 
-The system has several layers that can fail independently: data validation, storage, the extension, the model integration and the dashboard. Model quality also depends strongly on the prompt.
+The system has several layers that can fail independently: data validation, storage, the extension, Transformer-based detection, Qwen explainability and the dashboard. The detection model and the explanation model require different forms of evaluation: the former must be assessed on its anomaly-detection behaviour, while the latter must be checked for faithful, evidence-grounded explanations.
 
 ## Key Observation
 
@@ -321,7 +326,7 @@ Evaluation had to be split into three parts: **correctness** of the system (auto
 
 ## Outcome
 
-All automated tests passed (54/54, 27/27 and 8/8). Detection precision and recall on a labelled benchmark have not yet been measured; this remains future work.
+All automated tests passed (54/54, 27/27 and 8/8). Detection precision and recall for the implemented Transformer on the official labelled CERT benchmark have not yet been measured; this remains future work. Passing integration tests demonstrates that the pipeline runs, not that the detector has achieved a particular benchmark accuracy.
 
 # Week 11 — Integration, Testing and Documentation
 
@@ -358,7 +363,7 @@ The complete workflow runs end to end on a CPU-only laptop, and data persists ac
 
 The following items are still planned and are not yet implemented:
 
-- LSTM, GRU and Transformer autoencoders trained on normal behaviour, providing an anomaly score for the LLM to explain
+- Further refinement and systematic evaluation of the implemented decoder-only Transformer detector, including controlled comparisons with LSTM and GRU baselines
 - Preprocessing and evaluation on the official CERT r4.2 benchmark, and r4.2 → r6.2 transfer-learning experiments
 - Precision, recall, PR-AUC and false-positive-rate evaluation against labelled insider scenarios
 - Content analysis of e-mails and files with a separate model, if privacy requirements allow
