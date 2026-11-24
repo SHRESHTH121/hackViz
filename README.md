@@ -262,4 +262,5 @@ See **[docs/TEST_RESULTS.md](docs/TEST_RESULTS.md)** for the tests that were act
 | [docs/DeepLog-research_paper.pdf](docs/DeepLog-research_paper.pdf) | DeepLog reference paper |
 | [docs/repo2.pdf](docs/repo2.pdf) | Reference document |
 | [docs/legacy/](docs/legacy/) | Documentation from the earlier ML-pipeline design of this repository (original README, dataset notes, EDA notes, module READMEs), preserved at their original relative paths |
+| [docs/legacy/branches/](docs/legacy/branches/) | Documentation from the deleted side branches (architecture, data-flow, literature review, earlier journal versions), with an index of where each file came from |
 
