@@ -182,10 +182,42 @@ The paper helped define the boundary between established sequence-based log anom
 
 ## Repository Structure
 
+The repository is organized into research/ML components and the runnable application components. The incoming browser collector and Flask-based security console are kept separate so they can be developed and tested independently.
+
 ```text
 hackViz/
 ├── README.md
 ├── .gitignore
+│
+├── agent/
+│   └── browser-collector/
+│       ├── collector/
+│       │   └── collector.py
+│       ├── extension/
+│       │   ├── background.js
+│       │   ├── manifest.json
+│       │   ├── popup.html
+│       │   ├── popup.js
+│       │   └── schema.js
+│       ├── tests/
+│       │   ├── run_tests.sh
+│       │   └── test_agent.mjs
+│       └── README.md
+│
+├── apps/
+│   └── people-security-console/
+│       ├── server.py
+│       ├── requirements.txt
+│       ├── static/
+│       │   └── index.html
+│       ├── extension/
+│       │   ├── background.js
+│       │   ├── manifest.json
+│       │   ├── popup.html
+│       │   └── popup.js
+│       ├── tests/
+│       │   └── test_detection.py
+│       └── README.md
 │
 ├── Dataset/
 │   └── README.md
@@ -193,11 +225,9 @@ hackViz/
 ├── docs/
 │   ├── Journal.md
 │   ├── DeepLog-research_paper.pdf
-│   ├── project-proposal/
-│   ├── requirements/
-│   ├── literature-review/
-│   ├── architecture/
-│   └── reports/
+│   ├── Project Proposal.docx
+│   ├── hackvizppt.pdf
+│   └── repo2.pdf
 │
 ├── ml-service/
 │   ├── README.md
@@ -217,11 +247,21 @@ hackViz/
 ├── dashboard/
 │   └── streamlit/
 │
-├── tests/
-└── notebooks/
+├── notebooks/
+│   ├── DatasetEDA.ipynb
+│   └── README.md
+│
+└── tests/
 ```
 
-The directories are being introduced progressively as implementation begins. Empty directories may contain a `.gitkeep` file so the intended architecture remains visible in GitHub.
+**Local-only / generated content (not committed):**
+
+- `venv/`, `.venv/` and other Python virtual environments.
+- `node_modules/`, build output, caches, `__pycache__/` and compiled Python files.
+- Raw CERT extracts and generated activity data such as `cert_out/` and application-local data files.
+- Local secrets and environment files (except explicitly provided `.env.example` templates).
+
+The React/Vite dashboard scaffold is not included in this layout yet; it should be added when its implementation is ready. The tree describes the intended cleaned layout for the runnable source being integrated; folders will appear in GitHub as the corresponding source files are committed.
 
 ## Technology Stack
 
