@@ -1,7 +1,7 @@
 # hackViz — Explainable Insider-Threat Detection
 
 hackViz is an explainable anomaly-detection platform for insider-threat investigation. It combines a
-**transformer-based large language model** (Qwen2.5-3B-Instruct, a decoder-only transformer, run
+**transformer and large language model** (Qwen2.5-3B-Instruct, a decoder-only transformer, run
 locally with Ollama) with rule-based behavioural indicators. Together they judge employee activity
 against each person's **role, department and historical behaviour**.
 
