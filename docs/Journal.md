@@ -161,7 +161,7 @@ The preprocessing design now provides a clear interface between raw CERT data an
 
 The first major implementation problem was building the temporal engine: deciding how raw events should be grouped and ordered before they are analysed. The same activity can be organised in very different ways — per person, per day, per session, or as a moving window of recent events — and the choice directly affects what the model can and cannot notice.
 
-The problem became sharper once we decided to use a large language model for the assessment. An LLM cannot be given an employee's entire history: on our CPU-only laptops the practical context window is about 4,096 tokens, and every additional event makes inference slower.
+A second design challenge was separating the input requirements of the two models. The decoder-only Transformer needs ordered, consistently encoded event sequences for detection; Qwen is called only after detection to explain the result. Qwen cannot be given an employee's entire history: on our CPU-only laptops the practical context window is about 4,096 tokens, and every additional event makes inference slower.
 
 ## Relevant Context
 
