@@ -1,0 +1,8 @@
+{
+  "name": "hackviz-report-diagrams",
+  "private": true,
+  "type": "module",
+  "description": "Renders the report's SVG diagrams to PNG with the installed Google Chrome",
+  "scripts": { "build": "python make_diagrams.py svg && node render_diagrams.mjs svg ../figures" },
+  "dependencies": { "puppeteer-core": "^24.15.0" }
+}
